@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Aslant</title>
+  <meta name="description" content="A planes head in the browser: turn it, light it, overlay the Loomis construction and see it in a handful of values.">
+  <meta name="theme-color" content="#1C1B1A">
+  <link rel="stylesheet" href="style.css">
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <main id="stage" aria-label="Head"></main>
+
+  <aside id="panel">
+    <header>
+      <h1>Aslant</h1>
+      <button id="collapse" type="button" aria-expanded="true" aria-controls="controls">Hide</button>
+    </header>
+
+    <div id="controls">
+      <section>
+        <h2>Light</h2>
+        <label>Around <output for="azimuth"></output>
+          <input id="azimuth" type="range" min="-180" max="180" step="1" value="-50"></label>
+        <label>Height <output for="elevation"></output>
+          <input id="elevation" type="range" min="-80" max="85" step="1" value="35"></label>
+        <label>Strength <output for="key"></output>
+          <input id="key" type="range" min="0" max="4" step="0.05" value="2.4"></label>
+        <label>Fill <output for="fill"></output>
+          <input id="fill" type="range" min="0" max="1" step="0.01" value="0.18"></label>
+        <label class="check"><input id="shadows" type="checkbox" checked> Cast shadows</label>
+      </section>
+
+      <section>
+        <h2>Head</h2>
+        <label>Roll <output for="roll"></output>
+          <input id="roll" type="range" min="-45" max="45" step="1" value="0"></label>
+        <div class="segmented" role="radiogroup" aria-label="Surface">
+          <label><input type="radio" name="surface" value="smooth" checked> Smooth</label>
+          <label><input type="radio" name="surface" value="planes"> Planes</label>
+        </div>
+        <label class="check"><input id="loomis" type="checkbox"> Loomis</label>
+        <label>Backdrop <output for="backdrop"></output>
+          <input id="backdrop" type="range" min="0" max="100" step="1" value="45"></label>
+        <button id="reset" type="button">Front view</button>
+      </section>
+
+      <section>
+        <h2>Values</h2>
+        <div class="segmented" role="radiogroup" aria-label="Values">
+          <label><input type="radio" name="steps" value="0" checked> Off</label>
+          <label><input type="radio" name="steps" value="2"> 2</label>
+          <label><input type="radio" name="steps" value="3"> 3</label>
+          <label><input type="radio" name="steps" value="4"> 4</label>
+          <label><input type="radio" name="steps" value="5"> 5</label>
+          <label><input type="radio" name="steps" value="7"> 7</label>
+        </div>
+      </section>
+
+      <button id="export" type="button" class="primary">Save picture</button>
+      <p class="hint">Drag to turn. Right-drag or two fingers to move. Scroll or pinch to zoom.</p>
+      <p class="credit">Head: <a href="https://github.com/makehumancommunity/makehuman">MakeHuman</a> base mesh, CC0.</p>
+    </div>
+  </aside>
+
+  <p id="status" role="status">Loading head…</p>
+
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>
