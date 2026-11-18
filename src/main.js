@@ -115,8 +115,9 @@ const overlayHead = new THREE.Mesh(
 );
 overlayHead.renderOrder = 0;
 const loomis = buildLoomis();
-loomis.visible = false;
-overlayRoot.add(overlayHead, loomis);
+loomis.group.visible = false;
+overlayRoot.add(overlayHead, loomis.group);
+const eye = new THREE.Vector3();
 
 // --- Post-processing ---------------------------------------------------------
 
@@ -137,6 +138,7 @@ function resize() {
   composer.setSize(w, h);
   camera.aspect = w / h;
   camera.updateProjectionMatrix();
+  loomis.setSize(w, h);
 }
 
 function render() {
@@ -147,7 +149,9 @@ function render() {
 
   renderer.autoClear = true;
   composer.render();
-  if (loomis.visible) {
+  if (loomis.group.visible) {
+    overlayRoot.updateMatrixWorld(true);
+    loomis.update(overlayRoot.worldToLocal(eye.copy(camera.position)));
     renderer.autoClear = false;
     renderer.clearDepth();
     renderer.render(overlay, camera);
@@ -188,7 +192,7 @@ $('shadows').addEventListener('change', (e) => {
 });
 
 $('loomis').addEventListener('change', (e) => {
-  loomis.visible = e.target.checked;
+  loomis.group.visible = e.target.checked;
 });
 
 for (const input of document.querySelectorAll('input[name="surface"]')) {

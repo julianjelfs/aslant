@@ -4,7 +4,7 @@
 //
 //   curl -LO https://raw.githubusercontent.com/makehumancommunity/makehuman/master/makehuman/data/3dobjs/base.obj
 //   npm i three@0.170.0
-//   node tool/extract-head.mjs base.obj models/head.glb 5.2
+//   node tool/extract-head.mjs base.obj models/head.glb 5.45
 //
 // The Loomis fit in src/loomis.js is measured against this output, so
 // re-cutting the head means re-checking MAKEHUMAN_FIT.
@@ -19,8 +19,24 @@ for (const l of fs.readFileSync(src, 'utf8').split('\n')) {
   else if (p[0] === 'g') g = p[1];
   else if (p[0] === 'f' && keep.test(g)) {
     const f = p.slice(1).map(s => parseInt(s) - 1);
-    if (f.every(i => { const [x, y, z] = v[i]; return y > 6.3 || (y > cutY && Math.hypot(x, z - 0.15) < 0.62); })) for (let k = 1; k + 1 < f.length; k++) tris.push(f[0], f[k], f[k + 1]);
+    // Above 5.95 the body is only head and neck. Below it the shoulders flare,
+    // so keep just an elliptical neck down to cutY.
+    if (f.every(i => { const [x, y, z] = v[i]; return y > 5.95 || (y > cutY && Math.hypot(x / 0.56, (z - 0.1) / 0.7) < 1); })) for (let k = 1; k + 1 < f.length; k++) tris.push(f[0], f[k], f[k + 1]);
   }
+}
+// The cut can leave slivers. Keep connected pieces of 100+ triangles (the head
+// and both eyes); drop the rest.
+{
+  const parent = new Map();
+  const find = (a) => { while (parent.get(a) !== a) { parent.set(a, parent.get(parent.get(a))); a = parent.get(a); } return a; };
+  for (const i of tris) if (!parent.has(i)) parent.set(i, i);
+  for (let t = 0; t < tris.length; t += 3) { const r = find(tris[t]); parent.set(find(tris[t + 1]), r); parent.set(find(tris[t + 2]), find(r)); }
+  const size = new Map();
+  for (let t = 0; t < tris.length; t += 3) { const r = find(tris[t]); size.set(r, (size.get(r) ?? 0) + 1); }
+  const kept = [];
+  for (let t = 0; t < tris.length; t += 3) if (size.get(find(tris[t])) >= 100) kept.push(tris[t], tris[t + 1], tris[t + 2]);
+  console.log('pieces', [...size.values()].sort((a, b) => b - a).join(' '));
+  tris.length = 0; tris.push(...kept);
 }
 const remap = new Map(); const pos = [];
 const idx = tris.map(i => { if (!remap.has(i)) { remap.set(i, remap.size); pos.push(...v[i]); } return remap.get(i); });

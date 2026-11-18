@@ -5,14 +5,10 @@
 // their circles have radius `u`, which puts hairline and nose line at the top
 // and bottom of the side circle, as Loomis draws it.
 
-import {
-  BufferGeometry,
-  Float32BufferAttribute,
-  Group,
-  LineBasicMaterial,
-  LineSegments,
-  Vector3,
-} from 'three';
+import { Group, Quaternion, Vector3 } from 'three';
+import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
+import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
+import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js';
 
 // Fitted by eye to the MakeHuman head in models/head.glb (centred on its
 // bounding box). A different model needs its own numbers.
@@ -91,25 +87,63 @@ export function loomisSegments({ cy, cz, r, u, chinZ }) {
   return seg;
 }
 
+// Plain WebGL lines are 1px whatever you ask for, which vanishes on a hi-dpi
+// screen, so these are three's screen-space fat lines.
+function lines(points, materials) {
+  const geometry = new LineSegmentsGeometry().setPositions(points.flatMap((p) => p.toArray()));
+  return materials.map((m) => {
+    const l = new LineSegments2(geometry, m);
+    l.renderOrder = m.depthTest ? 2 : 1;
+    return l;
+  });
+}
+
 /**
- * Two copies of the same lines: one depth-tested against the head, one drawn
- * faintly through it, so the hidden half of the ball still reads.
+ * The construction as a group in head space. Every line is drawn twice: once
+ * depth-tested against the head, once faintly through it, so the hidden half
+ * of the ball still reads.
+ *
+ * `update(eye)` takes the camera position in the group's own space and keeps
+ * the ball's outline facing it. `setSize(w, h)` takes the canvas size in CSS
+ * pixels.
  */
 export function buildLoomis(fit = MAKEHUMAN_FIT, color = 0xe2471f) {
-  const points = loomisSegments(fit);
-  const geometry = new BufferGeometry();
-  geometry.setAttribute('position', new Float32BufferAttribute(points.flatMap((p) => p.toArray()), 3));
-
-  const hidden = new LineSegments(
-    geometry,
-    new LineBasicMaterial({ color, transparent: true, opacity: 0.28, depthTest: false, depthWrite: false }),
-  );
-  hidden.renderOrder = 1;
-
-  const visible = new LineSegments(geometry, new LineBasicMaterial({ color, depthWrite: false }));
-  visible.renderOrder = 2;
+  const visible = new LineMaterial({ color, linewidth: 2, depthWrite: false });
+  const hidden = new LineMaterial({ color, linewidth: 1.25, transparent: true, opacity: 0.35, depthTest: false, depthWrite: false });
+  const materials = [hidden, visible];
 
   const group = new Group();
-  group.add(hidden, visible);
-  return group;
+  group.add(...lines(loomisSegments(fit), materials));
+
+  // Ball outline: a unit circle in the XY plane, moved and scaled each frame
+  // to the sphere's silhouette as seen from the eye.
+  const unit = [];
+  circle(unit, new Vector3(), new Vector3(1, 0, 0), new Vector3(0, 1, 0), 1, 96);
+  const outline = new Group();
+  outline.add(...lines(unit, materials));
+  group.add(outline);
+
+  const centre = new Vector3(0, fit.cy, fit.cz);
+  const toEye = new Vector3();
+  const zAxis = new Vector3(0, 0, 1);
+  const q = new Quaternion();
+
+  return {
+    group,
+    update(eye) {
+      toEye.subVectors(eye, centre);
+      const dist = toEye.length();
+      if (dist <= fit.r) return;
+      toEye.divideScalar(dist);
+      // Under perspective the silhouette is a small circle pulled towards
+      // the eye, a little smaller than the ball.
+      const k = (fit.r * fit.r) / dist;
+      outline.position.copy(centre).addScaledVector(toEye, k);
+      outline.scale.setScalar(Math.sqrt(fit.r * fit.r - k * k));
+      outline.quaternion.copy(q.setFromUnitVectors(zAxis, toEye));
+    },
+    setSize(w, h) {
+      for (const m of materials) m.resolution.set(w, h);
+    },
+  };
 }
