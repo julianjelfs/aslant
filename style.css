@@ -312,6 +312,18 @@ input.greys::-moz-range-thumb {
   margin-top: 4px;
 }
 
+.row.switches { justify-content: flex-start; gap: 24px; }
+
+.heading-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: -4px 0 6px;
+}
+
+.heading-row h2 { margin: 0; }
+.heading-row button.quiet { margin-right: -10px; }
+
 /* --- Values: each choice shows the ladder it gives ---------------------- */
 
 .steps {

@@ -11,7 +11,7 @@ Live at https://aslant.julianjelfs.co.uk/
 - Reflected light: the light bounced into the shadow side, set as a share of the lit side's brightness ("1/12 of the lamp"), so it keeps its relationship to the lamp when you change the lamp's strength. Its colour only shows in the shadows.
 - Light colour: colour temperature for the lamp and the reflected light, on a mired scale so equal steps look equally warmer or cooler, with named sources (candle, tungsten, north sky) along it. The lamp starts at noon sun and the reflected light at north sky.
 - Head: roll (slider, a sideways two-finger swipe on a trackpad, or a two-finger twist on a touch screen) and backdrop value.
-- Loomis overlay: ball, side planes, brow and hairline, nose and chin lines, jaw. Lines behind the head show faintly.
+- Loomis overlay: ball, side planes, brow and hairline, nose and chin lines, jaw. Lines behind the head show faintly. Switch the model off to see the frame on its own; the lines then hide behind the Loomis ball instead.
 - Values: 2 to 7 bands of CIE L*, using the same maths as Askance's shader (`src/values.js`). The bands are absolute, so the lamp is exposed for the light: at 100% strength a plane facing it squarely lands at L* 95, whatever the lamp's colour.
 - Save picture: a PNG of the current view, ready to open in Askance.
 

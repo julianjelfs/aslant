@@ -6,7 +6,7 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { ValueShader, greyOfLstar } from './values.js';
-import { buildLoomis } from './loomis.js';
+import { buildLoomis, HEAD_FIT } from './loomis.js';
 import { createLightBall, describeDir, anglesOf } from './lightball.js';
 import { DARK_L, LIGHT_L } from './values.js';
 import { kelvinAt, positionOf, rgbOfKelvin, describeKelvin, trackGradient, cssOfKelvin } from './kelvin.js';
@@ -95,7 +95,21 @@ const overlayHead = new THREE.Mesh(
 overlayHead.renderOrder = 0;
 const loomis = buildLoomis();
 loomis.group.visible = false;
-overlayRoot.add(overlayHead, loomis.group);
+// With the model hidden, the lines hide behind the Loomis ball instead: a
+// sphere with its sides pressed flat where the side planes cut, drawn only
+// into the depth buffer, so the far half of the ball still reads as behind.
+const loomisBall = (() => {
+  const { cy, cz, r, u } = HEAD_FIT;
+  const d = Math.sqrt(r * r - u * u);
+  const g = new THREE.SphereGeometry(r, 64, 48);
+  const p = g.attributes.position;
+  for (let i = 0; i < p.count; i++) p.setX(i, THREE.MathUtils.clamp(p.getX(i), -d, d));
+  const m = new THREE.Mesh(g, overlayHead.material);
+  m.position.set(0, cy, cz);
+  m.visible = false;
+  return m;
+})();
+overlayRoot.add(overlayHead, loomisBall, loomis.group);
 const eye = new THREE.Vector3();
 
 // --- Post-processing ---------------------------------------------------------
@@ -382,6 +396,19 @@ bindRange('backdrop', (v) => `L* ${v}`, (v) => {
 
 $('loomis').addEventListener('change', (e) => {
   loomis.group.visible = e.target.checked;
+});
+
+$('model').addEventListener('change', (e) => {
+  const on = e.target.checked;
+  head.visible = on;
+  overlayHead.visible = on;
+  loomisBall.visible = !on;
+  // With nothing else on screen, show the frame.
+  const frame = $('loomis');
+  if (!on && !frame.checked) {
+    frame.checked = true;
+    frame.dispatchEvent(new Event('change'));
+  }
 });
 
 // Each values choice draws the ladder it would give: the even L* steps

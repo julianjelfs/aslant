@@ -68,7 +68,13 @@
       </section>
 
       <section aria-labelledby="head-h">
-        <h2 id="head-h">Head</h2>
+        <div class="heading-row">
+          <h2 id="head-h">Head</h2>
+          <button id="reset" type="button" class="quiet">
+            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10a6 6 0 1 0 2-4.5"/><path d="M4 3.5V6h2.5"/></svg>
+            Front view
+          </button>
+        </div>
         <div class="field">
           <label for="roll">Roll <output for="roll" class="num"></output></label>
           <input id="roll" class="meter centred" type="range" min="-45" max="45" step="1" value="0">
@@ -77,12 +83,9 @@
           <label for="backdrop">Backdrop <output for="backdrop" class="num"></output></label>
           <input id="backdrop" class="greys" type="range" min="0" max="100" step="1" value="45">
         </div>
-        <div class="row">
+        <div class="row switches">
+          <label class="switch"><input id="model" type="checkbox" checked><span class="track" aria-hidden="true"></span>Model</label>
           <label class="switch"><input id="loomis" type="checkbox"><span class="track" aria-hidden="true"></span>Loomis</label>
-          <button id="reset" type="button" class="quiet">
-            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10a6 6 0 1 0 2-4.5"/><path d="M4 3.5V6h2.5"/></svg>
-            Front view
-          </button>
         </div>
       </section>
 
