@@ -10,10 +10,36 @@ import { buildLoomis, HEAD_FIT } from './loomis.js';
 import { createLightBall, describeDir, anglesOf } from './lightball.js';
 import { DARK_L, LIGHT_L } from './values.js';
 import { kelvinAt, positionOf, rgbOfKelvin, describeKelvin, trackGradient, cssOfKelvin } from './kelvin.js';
+import { loadSettings, saveSettings, clearSettings, num, vec } from './settings.js';
 
 const $ = (id) => document.getElementById(id);
 const stage = $('stage');
 const status = (text) => ($('status').textContent = text);
+
+// --- Saved settings ----------------------------------------------------------
+//
+// Put the saved values into the controls before anything binds to them, so
+// each binding below starts from what was saved rather than the default.
+
+const RANGES = ['key', 'key-k', 'fill', 'fill-k', 'roll', 'backdrop'];
+const saved = loadSettings();
+
+if (saved) {
+  for (const id of RANGES) {
+    const v = num(saved.inputs?.[id]);
+    if (v !== undefined) $(id).value = v;
+  }
+  for (const id of ['model', 'loomis']) {
+    if (typeof saved[id] === 'boolean') $(id).checked = saved[id];
+  }
+  const step = document.querySelector(`input[name="steps"][value="${num(saved.steps)}"]`);
+  if (step) step.checked = true;
+  if (saved.collapsed === true) {
+    $('panel').classList.add('collapsed');
+    $('collapse').setAttribute('aria-expanded', 'false');
+    $('collapse').setAttribute('aria-label', 'Show controls');
+  }
+}
 
 // --- Renderer, scene, camera -------------------------------------------------
 
@@ -40,6 +66,14 @@ controls.target.copy(AIM);
 controls.enableDamping = true;
 controls.minDistance = 2.5;
 controls.maxDistance = 25;
+{
+  const position = vec(saved?.camera?.position);
+  const target = vec(saved?.camera?.target);
+  if (position && target) {
+    camera.position.set(position.x, position.y, position.z);
+    controls.target.set(target.x, target.y, target.z);
+  }
+}
 
 // --- Lights -----------------------------------------------------------------
 //
@@ -224,7 +258,7 @@ function syncBall() {
   });
 }
 
-ball.setDir(ball.dir);
+ball.setDir(vec(saved?.light) ?? ball.dir);
 
 const deg = (v) => `${v}°`;
 // Exposure and reflected light.
@@ -272,7 +306,7 @@ bindRange('fill', (v) => (v <= 0 ? 'None' : `1/${Math.round(1 / reflectedAt(v))}
 // way a lamp and a north window light a studio.
 function bindKelvin(id, kelvin, apply) {
   const input = $(id);
-  input.value = Math.round(positionOf(kelvin) * 1000);
+  if (num(saved?.inputs?.[id]) === undefined) input.value = Math.round(positionOf(kelvin) * 1000);
   input.style.setProperty('--track', trackGradient());
   bindRange(id, (v) => describeKelvin(kelvinAt(v / 1000)), (v) => {
     const k = kelvinAt(v / 1000);
@@ -299,7 +333,7 @@ function nudgeRoll(by) {
   const v = THREE.MathUtils.clamp(Number(input.value) + by, Number(input.min), Number(input.max));
   if (Math.round(v) === Number(input.value)) return;
   input.value = Math.round(v);
-  input.dispatchEvent(new Event('input'));
+  input.dispatchEvent(new Event('input', { bubbles: true }));
 }
 
 // Trackpad: a horizontal two-finger swipe rolls, a vertical one zooms. Each
@@ -455,6 +489,54 @@ $('collapse').addEventListener('click', (e) => {
   const collapsed = $('panel').classList.toggle('collapsed');
   button.setAttribute('aria-expanded', String(!collapsed));
   button.setAttribute('aria-label', collapsed ? 'Show controls' : 'Hide controls');
+});
+
+// --- Saving ----------------------------------------------------------------
+
+function currentSettings() {
+  const p = camera.position;
+  const t = controls.target;
+  return {
+    inputs: Object.fromEntries(RANGES.map((id) => [id, Number($(id).value)])),
+    model: $('model').checked,
+    loomis: $('loomis').checked,
+    steps: Number(document.querySelector('input[name="steps"]:checked').value),
+    light: { ...ball.dir },
+    camera: { position: { x: p.x, y: p.y, z: p.z }, target: { x: t.x, y: t.y, z: t.z } },
+    collapsed: $('panel').classList.contains('collapsed'),
+  };
+}
+
+let saveTimer = 0;
+function scheduleSave() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => saveSettings(currentSettings()), 250);
+}
+
+// Switches set from saved settings still need their effects applied.
+if (saved) {
+  $('model').dispatchEvent(new Event('change'));
+  $('loomis').dispatchEvent(new Event('change'));
+  document.querySelector('input[name="steps"]:checked').dispatchEvent(new Event('change'));
+}
+
+$('controls').addEventListener('input', scheduleSave);
+$('controls').addEventListener('change', scheduleSave);
+$('ball').addEventListener('pointerup', scheduleSave);
+$('ball').addEventListener('keyup', scheduleSave);
+$('collapse').addEventListener('click', scheduleSave);
+controls.addEventListener('change', scheduleSave);
+let resetting = false;
+window.addEventListener('pagehide', () => {
+  // After "Reset everything", don't write the old settings straight back.
+  if (!resetting) saveSettings(currentSettings());
+});
+
+$('reset-all').addEventListener('click', () => {
+  resetting = true;
+  clearTimeout(saveTimer);
+  clearSettings();
+  location.reload();
 });
 
 $('export').addEventListener('click', () => {

@@ -428,6 +428,8 @@ button.primary:hover { background: var(--accent-pressed); }
 }
 
 .credit { color: var(--faint); }
+
+button.reset-all { margin: 8px 0 0 -10px; font-size: 12px; }
 .credit a { color: inherit; text-underline-offset: 2px; }
 .credit a:hover { color: var(--muted); }
 

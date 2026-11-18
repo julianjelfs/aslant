@@ -14,6 +14,7 @@ Live at https://aslant.julianjelfs.co.uk/
 - Loomis overlay: ball, side planes, brow and hairline, nose and chin lines, jaw. Lines behind the head show faintly. Switch the model off to see the frame on its own; the lines then hide behind the Loomis ball instead.
 - Values: 2 to 7 bands of CIE L*, using the same maths as Askance's shader (`src/values.js`). The bands are absolute, so the lamp is exposed for the light: at 100% strength a plane facing it squarely lands at L* 95, whatever the lamp's colour.
 - Save picture: a PNG of the current view, ready to open in Askance.
+- Every setting, the view included, is kept in this browser's localStorage, so a refresh changes nothing. "Reset everything" goes back to the defaults.
 
 ## Running it
 
