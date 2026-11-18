@@ -6,6 +6,14 @@
   <title>Aslant</title>
   <meta name="description" content="A planes head in the browser: turn it, light it, overlay the Loomis construction and see it in a handful of values.">
   <meta name="theme-color" content="#1C1B1A">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="icon" href="icons/favicon-64.png" type="image/png" sizes="64x64">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="Aslant">
   <link rel="preload" href="fonts/BricolageGrotesque-Medium.ttf" as="font" type="font/ttf" crossorigin>
   <link rel="stylesheet" href="style.css?v=__VERSION__">
   <!-- __VERSION__ is replaced with the commit on deploy (.github/workflows/pages.yml),
@@ -116,5 +124,19 @@
   <p id="status" role="status">Loading head…</p>
 
   <script type="module">import './src/main.js';</script>
+  <script>
+    // Offline support (sw.js). On the very first visit the worker isn't in
+    // control yet, so once the head has loaded, tell it what this page
+    // fetched (three.js from jsDelivr included) and it caches those too.
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js');
+      window.addEventListener('aslant:loaded', () => {
+        navigator.serviceWorker.ready.then((reg) => {
+          const urls = performance.getEntriesByType('resource').map((e) => e.name);
+          reg.active?.postMessage({ type: 'warm', urls });
+        });
+      }, { once: true });
+    }
+  </script>
 </body>
 </html>

@@ -23,17 +23,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Stamp every local asset URL with this commit, so a browser can't pair
-      # a cached script from one deploy with the page from another.
-      - name: Stamp version
-        run: |
-          sed -i "s/__VERSION__/${GITHUB_SHA::12}/g" index.html
-          ! grep -q "__VERSION__" index.html
-
       - name: Collect site
         run: |
           mkdir _site
-          cp -r index.html style.css CNAME src models fonts _site/
+          cp -r index.html style.css manifest.json sw.js CNAME src models fonts icons _site/
+
+      # Stamp every local asset URL and the service worker's cache with this
+      # commit, so a browser can't pair a cached file from one deploy with
+      # the page from another.
+      - name: Stamp version
+        run: node tool/stamp.mjs _site "${GITHUB_SHA::12}"
 
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3

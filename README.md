@@ -22,6 +22,14 @@ It's static files with no build step. three.js 0.170.0 comes from jsDelivr throu
 
 GitHub Pages serves `main` from the repo root.
 
+## Installing and offline
+
+Aslant is a PWA: add it to a home screen and it opens full screen, and after the first visit it works offline. `sw.js` caches every file the deploy ships plus the three.js modules from jsDelivr. The page is fetched network-first, so an installed copy picks up a new deploy whenever it's online.
+
+Deploys go through `.github/workflows/pages.yml`, which runs `tool/stamp.mjs` to stamp the commit onto every local URL in `index.html` and onto the worker's cache, and to list the files the worker caches. A new script under `src/` needs an entry in the import map in `index.html` to get the stamp.
+
+The icon is a Loomis head drawn from the overlay's own construction. `node tool/make-icons.mjs` redraws `icons/` (it uses headless Chrome to rasterise).
+
 ## The head
 
 `models/head.glb` is [Head Planes Reference](https://sketchfab.com/3d-models/head-planes-reference-7b6167ae3e484f1884ae0491a491e856) by [zsoltsulyok](https://sketchfab.com/zsoltsulyok), licensed [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). `tool/prepare-head.mjs` turns the Sketchfab download into the shipped file. It welds the four chunks, reduces the mesh from 378k to 60k triangles with [meshoptimizer](https://github.com/zeux/meshoptimizer) (the surface moves by about 0.01% of the head's height), and rescales and recentres it. The download is 10 MB and the shipped file is about 1 MB.

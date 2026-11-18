@@ -562,6 +562,7 @@ new GLTFLoader().load(
       }
     });
     status('');
+    window.dispatchEvent(new Event('aslant:loaded'));
   },
   undefined,
   (err) => {
