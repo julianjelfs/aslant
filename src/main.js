@@ -112,9 +112,32 @@ function resize() {
   composer.setPixelRatio(renderer.getPixelRatio());
   composer.setSize(w, h);
   camera.aspect = w / h;
-  camera.updateProjectionMatrix();
+  frame();
   loomis.setSize(w, h);
 }
+
+// Centre the head in the space the panel leaves. On a desktop the panel sits
+// at the right, so the picture shifts left by half its width. On a phone it's
+// a sheet along the bottom, so the picture shifts up and shrinks to fit above
+// it. The camera itself doesn't move, so orbiting still turns about the head.
+function frame() {
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  const panel = $('panel').getBoundingClientRect();
+  const sheet = panel.width >= w - 1;
+  if (sheet) {
+    const covered = Math.max(0, h - panel.top);
+    camera.zoom = Math.min(1, ((h - covered) / h) * 1.15);
+    camera.setViewOffset(w, h, 0, covered / 2, w, h);
+  } else {
+    camera.zoom = 1;
+    const covered = Math.max(0, w - panel.left);
+    camera.setViewOffset(w, h, covered / 2, 0, w, h);
+  }
+  camera.updateProjectionMatrix();
+}
+
+new ResizeObserver(frame).observe($('panel'));
 
 function render() {
   controls.update();

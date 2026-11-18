@@ -444,7 +444,7 @@ button.primary:hover { background: var(--accent-pressed); }
     right: 0;
     bottom: 0;
     width: auto;
-    max-height: 52%;
+    max-height: 46%;
     border-radius: 16px 16px 0 0;
   }
   #collapse svg { transform: none; }
