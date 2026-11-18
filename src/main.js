@@ -350,7 +350,7 @@ $('export').addEventListener('click', () => {
 // --- Load --------------------------------------------------------------------
 
 new GLTFLoader().load(
-  'models/head.glb',
+  `models/head.glb?v=${new URL(import.meta.url).searchParams.get('v') ?? ''}`,
   (gltf) => {
     gltf.scene.traverse((o) => {
       if (o.isMesh && o.name === 'head') {

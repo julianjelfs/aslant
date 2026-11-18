@@ -7,12 +7,21 @@
   <meta name="description" content="A planes head in the browser: turn it, light it, overlay the Loomis construction and see it in a handful of values.">
   <meta name="theme-color" content="#1C1B1A">
   <link rel="preload" href="fonts/BricolageGrotesque-Medium.ttf" as="font" type="font/ttf" crossorigin>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=__VERSION__">
+  <!-- __VERSION__ is replaced with the commit on deploy (.github/workflows/pages.yml),
+       so a browser holding cached files from one deploy never runs them with
+       another's page. The import map versions every local module, because
+       relative imports inside them can't carry a query string themselves. -->
   <script type="importmap">
     {
       "imports": {
         "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
-        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/",
+        "./src/main.js": "./src/main.js?v=__VERSION__",
+        "./src/values.js": "./src/values.js?v=__VERSION__",
+        "./src/loomis.js": "./src/loomis.js?v=__VERSION__",
+        "./src/lightball.js": "./src/lightball.js?v=__VERSION__",
+        "./src/kelvin.js": "./src/kelvin.js?v=__VERSION__"
       }
     }
   </script>
@@ -101,6 +110,6 @@
 
   <p id="status" role="status">Loading head…</p>
 
-  <script type="module" src="src/main.js"></script>
+  <script type="module">import './src/main.js';</script>
 </body>
 </html>
