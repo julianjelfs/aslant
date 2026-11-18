@@ -7,6 +7,9 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { ValueShader, greyOfLstar } from './values.js';
 import { buildLoomis } from './loomis.js';
+import { createLightBall, describeDir, anglesOf } from './lightball.js';
+import { DARK_L, LIGHT_L } from './values.js';
+import { kelvinAt, positionOf, rgbOfKelvin, describeKelvin, trackGradient, cssOfKelvin } from './kelvin.js';
 
 const $ = (id) => document.getElementById(id);
 const stage = $('stage');
@@ -50,15 +53,12 @@ scene.add(key, key.target);
 const fill = new THREE.HemisphereLight(0xf3f1ec, 0x3a3734, 0.18);
 scene.add(fill);
 
-const light = { azimuth: -50, elevation: 35 };
+// View space: +z points back at the viewer, +x to their right, +y up.
+const lightDir = new THREE.Vector3();
 const viewDir = new THREE.Vector3();
 
 function placeKey() {
-  const a = THREE.MathUtils.degToRad(light.azimuth);
-  const e = THREE.MathUtils.degToRad(light.elevation);
-  // View space: +z points back at the viewer, +x to their right.
-  viewDir.set(Math.sin(a) * Math.cos(e), Math.sin(e), Math.cos(a) * Math.cos(e));
-  viewDir.applyQuaternion(camera.quaternion);
+  viewDir.copy(lightDir).applyQuaternion(camera.quaternion);
   key.target.position.copy(controls.target);
   key.position.copy(controls.target).addScaledVector(viewDir, 10);
 }
@@ -139,11 +139,16 @@ resize();
 
 // --- Controls ----------------------------------------------------------------
 
+// Every slider shows how far along it is through --fill, which the CSS uses
+// to paint the track up to the thumb.
 function bindRange(id, format, apply) {
   const input = $(id);
   const out = document.querySelector(`output[for="${id}"]`);
   const update = () => {
     const v = Number(input.value);
+    const min = Number(input.min);
+    const max = Number(input.max);
+    input.style.setProperty('--fill', `${((v - min) / (max - min)) * 100}%`);
     if (out) out.textContent = format(v);
     apply(v);
   };
@@ -151,15 +156,81 @@ function bindRange(id, format, apply) {
   update();
 }
 
+// The lit sphere. Its shading follows the scene's lights and the value pass,
+// so it is kept in step whenever any of those change.
+const ball = createLightBall($('ball'), {
+  onChange: (d) => {
+    lightDir.set(d.x, d.y, d.z);
+    showWhere(d);
+  },
+});
+
+function showWhere(d) {
+  const { azimuth, elevation } = anglesOf(d);
+  $('where').textContent = describeDir(d);
+  $('where-deg').textContent = `${Math.round(azimuth)}° · ${Math.round(elevation)}°`;
+}
+
+function syncBall() {
+  ball.set({
+    key: key.color.toArray(),
+    strength: key.intensity,
+    sky: fill.color.toArray(),
+    ground: fill.groundColor.toArray(),
+    fill: fill.intensity,
+    albedo: material.color.toArray(),
+    steps: values.enabled ? values.uniforms.uSteps.value : 0,
+  });
+}
+
+ball.setDir(ball.dir);
+
 const deg = (v) => `${v}°`;
-bindRange('azimuth', deg, (v) => (light.azimuth = v));
-bindRange('elevation', deg, (v) => (light.elevation = v));
-bindRange('key', (v) => v.toFixed(1), (v) => (key.intensity = v));
-bindRange('fill', (v) => v.toFixed(2), (v) => (fill.intensity = v));
+bindRange('key', (v) => v.toFixed(1), (v) => {
+  key.intensity = v;
+  syncBall();
+});
+bindRange('fill', (v) => `${Math.round(v * 100)}%`, (v) => {
+  fill.intensity = v;
+  syncBall();
+});
+
+// Colour temperature. The key defaults a little warm and the fill cool, the
+// way a lamp and a north window light a studio.
+function bindKelvin(id, kelvin, apply) {
+  const input = $(id);
+  input.value = Math.round(positionOf(kelvin) * 1000);
+  input.style.setProperty('--track', trackGradient());
+  bindRange(id, (v) => describeKelvin(kelvinAt(v / 1000)), (v) => {
+    const k = kelvinAt(v / 1000);
+    input.style.setProperty('--thumb', cssOfKelvin(k));
+    const [r, g, b] = rgbOfKelvin(k);
+    apply(new THREE.Color().setRGB(r, g, b, THREE.SRGBColorSpace));
+    syncBall();
+  });
+}
+
+bindKelvin('key-k', 4800, (c) => key.color.copy(c));
+bindKelvin('fill-k', 8500, (c) => {
+  fill.color.copy(c);
+  // Light bounced up from below: the same colour, much dimmer.
+  fill.groundColor.copy(c).multiplyScalar(0.18);
+});
+
 bindRange('roll', deg, (v) => (headGroup.rotation.z = THREE.MathUtils.degToRad(v)));
+
+{
+  const stops = [];
+  for (let i = 0; i <= 10; i++) {
+    const g = Math.round(greyOfLstar(i * 10) * 255);
+    stops.push(`rgb(${g} ${g} ${g}) ${i * 10}%`);
+  }
+  $('backdrop').style.setProperty('--track', `linear-gradient(90deg, ${stops.join(', ')})`);
+}
 bindRange('backdrop', (v) => `L* ${v}`, (v) => {
   const g = greyOfLstar(v);
   scene.background = new THREE.Color().setRGB(g, g, g, THREE.SRGBColorSpace);
+  $('backdrop').style.setProperty('--thumb', `rgb(${Array(3).fill(Math.round(g * 255)).join(' ')})`);
 });
 
 $('shadows').addEventListener('change', (e) => {
@@ -170,11 +241,30 @@ $('loomis').addEventListener('change', (e) => {
   loomis.group.visible = e.target.checked;
 });
 
+// Each values choice draws the ladder it would give: the even L* steps
+// between Askance's darkest and lightest grey, or a smooth ramp for Off.
+for (const ramp of document.querySelectorAll('.ramp')) {
+  const n = Number(ramp.dataset.steps);
+  if (n === 0) {
+    const a = Math.round(greyOfLstar(DARK_L) * 255);
+    const b = Math.round(greyOfLstar(LIGHT_L) * 255);
+    ramp.style.background = `linear-gradient(90deg, rgb(${a} ${a} ${a}), rgb(${b} ${b} ${b}))`;
+    continue;
+  }
+  for (let i = 0; i < n; i++) {
+    const g = Math.round(greyOfLstar(DARK_L + ((LIGHT_L - DARK_L) * i) / (n - 1)) * 255);
+    const band = document.createElement('i');
+    band.style.background = `rgb(${g} ${g} ${g})`;
+    ramp.append(band);
+  }
+}
+
 for (const input of document.querySelectorAll('input[name="steps"]')) {
   input.addEventListener('change', () => {
     const steps = Number(input.value);
     values.enabled = steps > 0;
     values.uniforms.uSteps.value = steps;
+    syncBall();
   });
 }
 
@@ -185,9 +275,10 @@ $('reset').addEventListener('click', () => {
 });
 
 $('collapse').addEventListener('click', (e) => {
+  const button = e.currentTarget;
   const collapsed = $('panel').classList.toggle('collapsed');
-  e.target.textContent = collapsed ? 'Show' : 'Hide';
-  e.target.setAttribute('aria-expanded', String(!collapsed));
+  button.setAttribute('aria-expanded', String(!collapsed));
+  button.setAttribute('aria-label', collapsed ? 'Show controls' : 'Hide controls');
 });
 
 $('export').addEventListener('click', () => {

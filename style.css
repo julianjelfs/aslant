@@ -1,12 +1,41 @@
-/* Askance's palette, so the two read as siblings. */
+/* Askance's palette and typeface, so the two read as siblings. */
+
+@font-face {
+  font-family: 'Bricolage';
+  src: url('fonts/BricolageGrotesque-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Bricolage';
+  src: url('fonts/BricolageGrotesque-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Bricolage';
+  src: url('fonts/BricolageGrotesque-SemiBold.ttf') format('truetype');
+  font-weight: 600;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Bricolage Display';
+  src: url('fonts/BricolageGrotesqueDisplay-ExtraBold.ttf') format('truetype');
+  font-weight: 800;
+  font-display: swap;
+}
+
 :root {
   --graphite: #1c1b1a;
   --raised: #2c2a28;
+  --sunk: #151413;
   --rule: #3a3734;
   --gesso: #f3f1ec;
   --muted: #a39e96;
+  --faint: #6f6a63;
   --accent: #e2471f;
   --accent-pressed: #c73b16;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
   color-scheme: dark;
 }
 
@@ -17,9 +46,19 @@ html, body {
   height: 100%;
   background: var(--graphite);
   color: var(--gesso);
-  font: 14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
+  font: 500 13px/1.4 'Bricolage', system-ui, sans-serif;
   overflow: hidden;
+  -webkit-font-smoothing: antialiased;
 }
+
+::selection { background: var(--accent); color: #fff; }
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.num, output { font-variant-numeric: tabular-nums; }
 
 #stage {
   position: fixed;
@@ -29,125 +68,356 @@ html, body {
 
 #stage canvas { display: block; }
 
+/* --- Panel ------------------------------------------------------------- */
+
 #panel {
   position: fixed;
   top: 12px;
   right: 12px;
-  width: 260px;
+  width: 288px;
   max-height: calc(100% - 24px);
-  overflow-y: auto;
-  background: color-mix(in srgb, var(--graphite) 92%, transparent);
-  border: 1px solid var(--rule);
-  border-radius: 10px;
-  padding: 12px 14px 14px;
-  backdrop-filter: blur(6px);
+  display: flex;
+  flex-direction: column;
+  background: var(--graphite);
+  border-radius: 14px;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 12px 32px rgba(0, 0, 0, 0.38);
+  overflow: hidden;
 }
 
-#panel header {
+.bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  padding: 12px 10px 10px 16px;
 }
 
 h1 {
   margin: 0;
-  font-size: 17px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
+  font: 800 22px/1 'Bricolage Display', 'Bricolage', sans-serif;
+  letter-spacing: -0.03em;
 }
 
-h2 {
-  margin: 0 0 6px;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--muted);
+#controls {
+  overflow-y: auto;
+  padding: 0 16px 16px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--rule) transparent;
 }
+
+#controls::-webkit-scrollbar { width: 8px; }
+#controls::-webkit-scrollbar-thumb { background: var(--rule); border-radius: 4px; border: 2px solid var(--graphite); }
+
+#panel.collapsed #controls { display: none; }
+#collapse svg { transform: rotate(180deg); }
+#panel.collapsed #collapse svg { transform: none; }
 
 section {
-  margin-top: 14px;
-  padding-top: 12px;
+  padding: 16px 0 14px;
   border-top: 1px solid var(--rule);
 }
 
-label {
-  display: block;
-  margin: 6px 0;
+section:first-child { border-top: 0; padding-top: 2px; }
+
+h2 {
+  margin: 0 0 10px;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
-label output {
-  float: right;
+/* --- Light ball -------------------------------------------------------- */
+
+.ball-wrap {
+  display: grid;
+  place-items: center;
+  margin: 0 -4px;
+}
+
+#ball {
+  width: 196px;
+  height: 196px;
+  cursor: grab;
+  touch-action: none;
+  border-radius: 50%;
+}
+
+#ball:active { cursor: grabbing; }
+
+#ball:focus-visible { outline-offset: -2px; }
+
+.where {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin: 2px 0 14px;
+  color: var(--gesso);
+  font-weight: 600;
+}
+
+.where .num { color: var(--muted); font-weight: 500; }
+
+/* --- Fields and sliders ---------------------------------------------- */
+
+.field { margin: 0 0 12px; }
+
+.field label {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
   color: var(--muted);
-  font-variant-numeric: tabular-nums;
+  margin-bottom: 6px;
 }
 
-input[type="range"] {
+.field output { color: var(--gesso); }
+
+.pair {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--rule);
+}
+
+input[type='range'] {
+  -webkit-appearance: none;
+  appearance: none;
   display: block;
   width: 100%;
-  margin: 4px 0 0;
-  accent-color: var(--accent);
-}
-
-label.check { display: flex; gap: 8px; align-items: center; }
-input[type="checkbox"] { accent-color: var(--accent); margin: 0; }
-
-.segmented {
-  display: flex;
-  margin: 8px 0;
-  border: 1px solid var(--rule);
-  border-radius: 7px;
-  overflow: hidden;
-}
-
-.segmented label {
-  flex: 1;
+  height: 18px;
   margin: 0;
-  text-align: center;
-  padding: 6px 0;
+  background: transparent;
+  cursor: pointer;
+  --fill: 50%;
+  --track: var(--rule);
+  --thumb: var(--gesso);
+}
+
+input[type='range']:focus-visible { outline-offset: 4px; border-radius: 4px; }
+
+/* Track: a hairline that fills with gesso up to the thumb. */
+input[type='range']::-webkit-slider-runnable-track {
+  height: 3px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--gesso) var(--fill), var(--rule) var(--fill));
+}
+input[type='range']::-moz-range-track {
+  height: 3px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--gesso) var(--fill), var(--rule) var(--fill));
+}
+
+input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  margin-top: -6.5px;
+  border-radius: 50%;
+  background: var(--thumb);
+  border: 3px solid var(--graphite);
+  box-shadow: 0 0 0 1px var(--muted), 0 2px 4px rgba(0, 0, 0, 0.4);
+  transition: transform 160ms var(--ease);
+}
+input[type='range']::-moz-range-thumb {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--thumb);
+  border: 3px solid var(--graphite);
+  box-shadow: 0 0 0 1px var(--muted), 0 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+input[type='range']:active::-webkit-slider-thumb { transform: scale(1.2); }
+
+/* Roll fills from the middle, since zero is upright. */
+input.centred::-webkit-slider-runnable-track {
+  background:
+    linear-gradient(90deg, transparent calc(50% - 1px), var(--muted) calc(50% - 1px), var(--muted) calc(50% + 1px), transparent calc(50% + 1px)) center / 100% 9px no-repeat,
+    linear-gradient(90deg, var(--rule) min(var(--fill), 50%), var(--gesso) min(var(--fill), 50%), var(--gesso) max(var(--fill), 50%), var(--rule) max(var(--fill), 50%));
+}
+input.centred::-moz-range-track {
+  background: linear-gradient(90deg, var(--rule) min(var(--fill), 50%), var(--gesso) min(var(--fill), 50%), var(--gesso) max(var(--fill), 50%), var(--rule) max(var(--fill), 50%));
+}
+
+/* Colour temperature and backdrop: the track is the scale itself, and the
+   thumb carries the colour it's sitting on. */
+input.kelvin::-webkit-slider-runnable-track,
+input.greys::-webkit-slider-runnable-track {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--track);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06) inset;
+}
+input.kelvin::-moz-range-track,
+input.greys::-moz-range-track {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--track);
+}
+input.kelvin::-webkit-slider-thumb,
+input.greys::-webkit-slider-thumb {
+  width: 18px;
+  height: 18px;
+  margin-top: -5px;
+  border: 3px solid var(--gesso);
+  box-shadow: 0 0 0 1px var(--graphite), 0 2px 6px rgba(0, 0, 0, 0.45);
+}
+input.kelvin::-moz-range-thumb,
+input.greys::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border: 3px solid var(--gesso);
+  box-shadow: 0 0 0 1px var(--graphite), 0 2px 6px rgba(0, 0, 0, 0.45);
+}
+
+/* --- Switches ------------------------------------------------------------ */
+
+.switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
   cursor: pointer;
   user-select: none;
+  margin-top: 4px;
 }
 
-.segmented label + label { border-left: 1px solid var(--rule); }
-.segmented input { position: absolute; opacity: 0; pointer-events: none; }
-.segmented label:has(input:checked) { background: var(--raised); color: var(--gesso); }
-.segmented label:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: -2px; }
+.switch input { position: absolute; opacity: 0; pointer-events: none; }
+
+.switch .track {
+  position: relative;
+  width: 30px;
+  height: 18px;
+  border-radius: 9px;
+  background: var(--rule);
+  transition: background 200ms var(--ease);
+}
+
+.switch .track::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--muted);
+  transition: transform 220ms var(--ease), background 200ms var(--ease);
+}
+
+.switch input:checked + .track { background: var(--accent); }
+.switch input:checked + .track::after { transform: translateX(12px); background: #fff; }
+.switch input:focus-visible + .track { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 4px;
+}
+
+/* --- Values: each choice shows the ladder it gives ---------------------- */
+
+.steps {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
+}
+
+.steps label {
+  display: grid;
+  gap: 5px;
+  justify-items: center;
+  padding: 6px 4px 5px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--muted);
+  transition: background 160ms var(--ease), color 160ms var(--ease);
+}
+
+.steps label:hover { background: var(--raised); color: var(--gesso); }
+.steps input { position: absolute; opacity: 0; pointer-events: none; }
+.steps label:has(input:checked) { background: var(--raised); color: var(--gesso); box-shadow: 0 0 0 1px var(--muted) inset; }
+.steps label:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+.ramp {
+  display: flex;
+  width: 100%;
+  height: 22px;
+  border-radius: 3px;
+  overflow: hidden;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06) inset;
+}
+
+.ramp i { flex: 1; }
+
+.steps .n { font-size: 12px; font-weight: 600; }
+
+/* --- Buttons ------------------------------------------------------------ */
 
 button {
   font: inherit;
   color: var(--gesso);
-  background: var(--raised);
-  border: 1px solid var(--rule);
-  border-radius: 7px;
-  padding: 6px 12px;
+  background: none;
+  border: 0;
   cursor: pointer;
 }
 
-button:hover { border-color: var(--muted); }
+button svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+button.icon {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  color: var(--muted);
+}
+
+button.icon svg { transition: transform 240ms var(--ease); }
+button.icon:hover { background: var(--raised); color: var(--gesso); }
+
+button.quiet {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  color: var(--muted);
+}
+
+button.quiet:hover { background: var(--raised); color: var(--gesso); }
 
 button.primary {
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   width: 100%;
-  margin-top: 16px;
-  padding: 9px 12px;
+  margin-top: 4px;
+  padding: 11px 12px;
+  border-radius: 10px;
   background: var(--accent);
-  border-color: var(--accent);
   color: #fff;
   font-weight: 600;
+  transition: background 160ms var(--ease);
 }
 
 button.primary:hover { background: var(--accent-pressed); }
 
-#collapse { padding: 3px 10px; font-size: 12px; }
-
 .hint, .credit {
-  margin: 10px 0 0;
+  margin: 12px 0 0;
   font-size: 12px;
   color: var(--muted);
 }
 
-.credit a { color: inherit; }
+.credit { color: var(--faint); }
+.credit a { color: inherit; text-underline-offset: 2px; }
+.credit a:hover { color: var(--muted); }
 
 #status {
   position: fixed;
@@ -156,17 +426,17 @@ button.primary:hover { background: var(--accent-pressed); }
   transform: translateX(-50%);
   margin: 0;
   padding: 6px 12px;
-  border-radius: 7px;
+  border-radius: 8px;
   background: var(--raised);
-  color: var(--gesso);
   font-size: 13px;
 }
 
 #status:empty { display: none; }
 
-#panel.collapsed #controls { display: none; }
+[hidden] { display: none !important; }
 
-/* Phone: the panel becomes a sheet along the bottom. */
+/* --- Phone: the panel becomes a sheet along the bottom ------------------ */
+
 @media (max-width: 640px) {
   #panel {
     top: auto;
@@ -174,12 +444,12 @@ button.primary:hover { background: var(--accent-pressed); }
     right: 0;
     bottom: 0;
     width: auto;
-    max-height: 48%;
-    border-radius: 12px 12px 0 0;
-    border-width: 1px 0 0;
-    padding: 10px 16px calc(14px + env(safe-area-inset-bottom));
+    max-height: 52%;
+    border-radius: 16px 16px 0 0;
   }
+  #collapse svg { transform: none; }
+  #panel.collapsed #collapse svg { transform: rotate(180deg); }
+  #controls { padding-bottom: calc(16px + env(safe-area-inset-bottom)); }
+  #ball { width: 168px; height: 168px; }
   #status { bottom: auto; top: 16px; }
 }
-
-[hidden] { display: none !important; }

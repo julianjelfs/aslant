@@ -6,6 +6,7 @@
   <title>Aslant</title>
   <meta name="description" content="A planes head in the browser: turn it, light it, overlay the Loomis construction and see it in a handful of values.">
   <meta name="theme-color" content="#1C1B1A">
+  <link rel="preload" href="fonts/BricolageGrotesque-Medium.ttf" as="font" type="font/ttf" crossorigin>
   <link rel="stylesheet" href="style.css">
   <script type="importmap">
     {
@@ -20,49 +21,80 @@
   <main id="stage" aria-label="Head"></main>
 
   <aside id="panel">
-    <header>
+    <header class="bar">
       <h1>Aslant</h1>
-      <button id="collapse" type="button" aria-expanded="true" aria-controls="controls">Hide</button>
+      <button id="collapse" class="icon" type="button" aria-expanded="true" aria-controls="controls" aria-label="Hide controls">
+        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 8l5 5 5-5"/></svg>
+      </button>
     </header>
 
     <div id="controls">
-      <section>
-        <h2>Light</h2>
-        <label>Around <output for="azimuth"></output>
-          <input id="azimuth" type="range" min="-180" max="180" step="1" value="-50"></label>
-        <label>Height <output for="elevation"></output>
-          <input id="elevation" type="range" min="-80" max="85" step="1" value="35"></label>
-        <label>Strength <output for="key"></output>
-          <input id="key" type="range" min="0" max="4" step="0.05" value="2.4"></label>
-        <label>Fill <output for="fill"></output>
-          <input id="fill" type="range" min="0" max="1" step="0.01" value="0.18"></label>
-        <label class="check"><input id="shadows" type="checkbox" checked> Cast shadows</label>
+      <section class="light" aria-labelledby="light-h">
+        <h2 id="light-h">Light</h2>
+        <div class="ball-wrap">
+          <canvas id="ball" tabindex="0" role="slider" aria-label="Light direction. Drag the lamp round the ball; past the edge it goes behind. Arrow keys move it."></canvas>
+        </div>
+        <p class="where"><span id="where">High, front left</span><span id="where-deg" class="num"></span></p>
+
+        <div class="field">
+          <label for="key">Strength <output for="key" class="num"></output></label>
+          <input id="key" class="meter" type="range" min="0" max="4" step="0.05" value="2.4">
+        </div>
+        <div class="field">
+          <label for="key-k">Colour <output for="key-k"></output></label>
+          <input id="key-k" class="kelvin" type="range" min="0" max="1000" step="1">
+        </div>
+
+        <div class="pair">
+          <div class="field">
+            <label for="fill">Fill <output for="fill" class="num"></output></label>
+            <input id="fill" class="meter" type="range" min="0" max="1" step="0.01" value="0.18">
+          </div>
+          <div class="field">
+            <label for="fill-k">Fill colour <output for="fill-k"></output></label>
+            <input id="fill-k" class="kelvin" type="range" min="0" max="1000" step="1">
+          </div>
+        </div>
+
+        <label class="switch"><input id="shadows" type="checkbox" checked><span class="track" aria-hidden="true"></span>Cast shadows</label>
       </section>
 
-      <section>
-        <h2>Head</h2>
-        <label>Roll <output for="roll"></output>
-          <input id="roll" type="range" min="-45" max="45" step="1" value="0"></label>
-        <label class="check"><input id="loomis" type="checkbox"> Loomis</label>
-        <label>Backdrop <output for="backdrop"></output>
-          <input id="backdrop" type="range" min="0" max="100" step="1" value="45"></label>
-        <button id="reset" type="button">Front view</button>
-      </section>
-
-      <section>
-        <h2>Values</h2>
-        <div class="segmented" role="radiogroup" aria-label="Values">
-          <label><input type="radio" name="steps" value="0" checked> Off</label>
-          <label><input type="radio" name="steps" value="2"> 2</label>
-          <label><input type="radio" name="steps" value="3"> 3</label>
-          <label><input type="radio" name="steps" value="4"> 4</label>
-          <label><input type="radio" name="steps" value="5"> 5</label>
-          <label><input type="radio" name="steps" value="7"> 7</label>
+      <section aria-labelledby="head-h">
+        <h2 id="head-h">Head</h2>
+        <div class="field">
+          <label for="roll">Roll <output for="roll" class="num"></output></label>
+          <input id="roll" class="meter centred" type="range" min="-45" max="45" step="1" value="0">
+        </div>
+        <div class="field">
+          <label for="backdrop">Backdrop <output for="backdrop" class="num"></output></label>
+          <input id="backdrop" class="greys" type="range" min="0" max="100" step="1" value="45">
+        </div>
+        <div class="row">
+          <label class="switch"><input id="loomis" type="checkbox"><span class="track" aria-hidden="true"></span>Loomis</label>
+          <button id="reset" type="button" class="quiet">
+            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10a6 6 0 1 0 2-4.5"/><path d="M4 3.5V6h2.5"/></svg>
+            Front view
+          </button>
         </div>
       </section>
 
-      <button id="export" type="button" class="primary">Save picture</button>
-      <p class="hint">Drag to turn. Right-drag or two fingers to move. Scroll or pinch to zoom.</p>
+      <section aria-labelledby="values-h">
+        <h2 id="values-h">Values</h2>
+        <div class="steps" role="radiogroup" aria-labelledby="values-h">
+          <label><input type="radio" name="steps" value="0" checked><span class="ramp" data-steps="0"></span><span class="n">Off</span></label>
+          <label><input type="radio" name="steps" value="2"><span class="ramp" data-steps="2"></span><span class="n">2</span></label>
+          <label><input type="radio" name="steps" value="3"><span class="ramp" data-steps="3"></span><span class="n">3</span></label>
+          <label><input type="radio" name="steps" value="4"><span class="ramp" data-steps="4"></span><span class="n">4</span></label>
+          <label><input type="radio" name="steps" value="5"><span class="ramp" data-steps="5"></span><span class="n">5</span></label>
+          <label><input type="radio" name="steps" value="7"><span class="ramp" data-steps="7"></span><span class="n">7</span></label>
+        </div>
+      </section>
+
+      <button id="export" type="button" class="primary">
+        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3v10"/><path d="M6 9l4 4 4-4"/><path d="M4 16h12"/></svg>
+        Save picture
+      </button>
+      <p class="hint">Drag the head to turn it. Right-drag or two fingers to move, scroll or pinch to zoom.</p>
       <p class="credit">Head: <a href="https://sketchfab.com/3d-models/head-planes-reference-7b6167ae3e484f1884ae0491a491e856">Head Planes Reference</a> by <a href="https://sketchfab.com/zsoltsulyok">zsoltsulyok</a>, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>. Reduced and rescaled.</p>
     </div>
   </aside>
