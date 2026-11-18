@@ -13,11 +13,11 @@ import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js
 // Fitted by eye to the MakeHuman head in models/head.glb (centred on its
 // bounding box). A different model needs its own numbers.
 export const MAKEHUMAN_FIT = {
-  cy: 0.57, // ball centre height = brow line
-  cz: 0.01, // ball centre depth
-  r: 0.94, // ball radius
+  cy: 0.45, // ball centre height = brow line
+  cz: -0.04, // ball centre depth, so the ball's front touches the brow
+  r: 0.98, // ball radius; the side cuts land near the widest part of the skull
   u: 0.65, // hairline-brow = brow-nose = nose-chin
-  chinZ: 0.8, // depth of the chin's front
+  chinZ: 0.81, // depth of the chin's front
 };
 
 function circle(out, centre, a, b, radius, n = 64, from = 0, to = Math.PI * 2) {

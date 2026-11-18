@@ -4,7 +4,7 @@
 //
 //   curl -LO https://raw.githubusercontent.com/makehumancommunity/makehuman/master/makehuman/data/3dobjs/base.obj
 //   npm i three@0.170.0
-//   node tool/extract-head.mjs base.obj models/head.glb 5.45
+//   node tool/extract-head.mjs base.obj models/head.glb 5.7
 //
 // The Loomis fit in src/loomis.js is measured against this output, so
 // re-cutting the head means re-checking MAKEHUMAN_FIT.
