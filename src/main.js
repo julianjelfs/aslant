@@ -195,7 +195,7 @@ bindRange('fill', (v) => `${Math.round(v * 100)}%`, (v) => {
   syncBall();
 });
 
-// Colour temperature. The key defaults a little warm and the fill cool, the
+// Colour temperature. The key defaults to noon sun and the fill to north sky, roughly the
 // way a lamp and a north window light a studio.
 function bindKelvin(id, kelvin, apply) {
   const input = $(id);
@@ -210,7 +210,7 @@ function bindKelvin(id, kelvin, apply) {
   });
 }
 
-bindKelvin('key-k', 4800, (c) => key.color.copy(c));
+bindKelvin('key-k', 5600, (c) => key.color.copy(c));
 bindKelvin('fill-k', 8500, (c) => {
   fill.color.copy(c);
   // Light bounced up from below: the same colour, much dimmer.

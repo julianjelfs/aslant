@@ -10,7 +10,7 @@
 import { DARK_L, LIGHT_L, greyOfLstar } from './values.js';
 
 const RING = 0.32; // the "behind" ring, as a fraction of the ball's radius
-const BEHIND_MAX = Math.PI * 0.45; // how far past side-on the ring reaches
+const BEHIND_MAX = Math.PI * 0.4; // how far past side-on the ring reaches: 162°, so a rim still catches an edge
 
 const srgbToLinear = (c) => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
 const linearToSrgb = (v) => (v <= 0.0031308 ? v * 12.92 : 1.055 * v ** (1 / 2.4) - 0.055);
