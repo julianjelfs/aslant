@@ -209,33 +209,45 @@ function syncBall() {
 ball.setDir(ball.dir);
 
 const deg = (v) => `${v}°`;
-// Reflected light is set as a share of the lamp, the way a lighting ratio
-// is: "1/4 of the lamp" means the shadow side gets a quarter of the light
-// the lit side gets. It follows the lamp's strength, so turning the lamp up
-// keeps the same light-to-shadow relationship.
+// Exposure and reflected light.
 //
-// The slider runs on a log scale from none, through 1/32, to 1/2. The fill is
-// a hemisphere light, which reaches a side-facing shadow plane at about 0.59
-// of its intensity (halfway between sky and the dimmer bounce from below).
+// The value bands are absolute L*, as in Askance, so the picture has to span
+// the scale for every band to show. The lamp is therefore exposed for the
+// light, the way a photographer would: at 100% strength, a plane facing the
+// lamp squarely lands at L* 95 whatever colour the lamp is. Strength scales
+// that exposure.
+//
+// Reflected light is set as a share of the lit side's brightness: "1/12 of
+// the lamp" means a plane in shadow is a twelfth as bright as one facing the
+// lamp. It's worked out in luminance, so its colour doesn't change how much
+// it lifts the shadows. The fill is a hemisphere light, which reaches a
+// side-facing shadow plane at about 0.59 of its intensity (halfway between
+// the sky and the dimmer bounce from below).
+const TARGET_Y = 0.88; // relative luminance of L* 95
 const HEMI_SIDE = 0.59;
-let reflected = 1 / 4;
+const lum = (c) => 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
 
+let strength = 1;
+let reflected = 1 / 12;
+
+// Slider 0..100: none, then 1/32 up to 1/2 on a log scale.
 const reflectedAt = (t) => (t <= 0 ? 0 : 1 / (32 / 16 ** (t / 100)));
 
-function applyReflected() {
-  // Lit side = lamp + reflected; shadow side = reflected. Ratio r = shadow / lit.
-  const lamp = key.intensity;
-  fill.intensity = reflected > 0 ? (lamp * reflected) / (1 - reflected) / HEMI_SIDE : 0;
+function applyLight() {
+  const albedo = lum(material.color);
+  const lit = TARGET_Y * strength;
+  key.intensity = (lit * Math.PI * (1 - reflected)) / (albedo * lum(key.color));
+  fill.intensity = reflected > 0 ? (reflected * lit * Math.PI) / (albedo * lum(fill.color) * HEMI_SIDE) : 0;
   syncBall();
 }
 
-bindRange('key', (v) => v.toFixed(1), (v) => {
-  key.intensity = v;
-  applyReflected();
+bindRange('key', (v) => `${v}%`, (v) => {
+  strength = v / 100;
+  applyLight();
 });
 bindRange('fill', (v) => (v <= 0 ? 'None' : `1/${Math.round(1 / reflectedAt(v))} of the lamp`), (v) => {
   reflected = reflectedAt(v);
-  applyReflected();
+  applyLight();
 });
 
 // Colour temperature. The key defaults to noon sun and the reflected light to north sky, roughly the
@@ -249,7 +261,7 @@ function bindKelvin(id, kelvin, apply) {
     input.style.setProperty('--thumb', cssOfKelvin(k));
     const [r, g, b] = rgbOfKelvin(k);
     apply(new THREE.Color().setRGB(r, g, b, THREE.SRGBColorSpace));
-    syncBall();
+    applyLight();
   });
 }
 

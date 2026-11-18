@@ -8,11 +8,11 @@ Live at https://aslant.julianjelfs.co.uk/
 
 - Drag to orbit, right-drag or two fingers to pan, scroll or pinch to zoom. The light is set relative to you, so orbiting reads as turning the head under a lamp that stays put.
 - Light: drag the lamp round a lit sphere (`src/lightball.js`) that is shaded by the scene's own lights and bands into values with the head. Past the sphere's edge the lamp swings behind for a rim light. Arrow keys move it too.
-- Reflected light: the light bounced into the shadow side, set as a share of the lamp ("1/4 of the lamp"), so it keeps its relationship to the lamp when you change the lamp's strength. Its colour only shows in the shadows.
+- Reflected light: the light bounced into the shadow side, set as a share of the lit side's brightness ("1/12 of the lamp"), so it keeps its relationship to the lamp when you change the lamp's strength. Its colour only shows in the shadows.
 - Light colour: colour temperature for the lamp and the reflected light, on a mired scale so equal steps look equally warmer or cooler, with named sources (candle, tungsten, north sky) along it. The lamp starts at noon sun and the reflected light at north sky.
 - Head: roll, backdrop value, cast shadows on or off.
 - Loomis overlay: ball, side planes, brow and hairline, nose and chin lines, jaw. Lines behind the head show faintly.
-- Values: 2 to 7 bands of CIE L*, using the same maths as Askance's shader (`src/values.js`).
+- Values: 2 to 7 bands of CIE L*, using the same maths as Askance's shader (`src/values.js`). The bands are absolute, so the lamp is exposed for the light: at 100% strength a plane facing it squarely lands at L* 95, whatever the lamp's colour.
 - Save picture: a PNG of the current view, ready to open in Askance.
 
 ## Running it
