@@ -396,6 +396,12 @@ bindRange('backdrop', (v) => `L* ${v}`, (v) => {
 
 $('loomis').addEventListener('change', (e) => {
   loomis.group.visible = e.target.checked;
+  // With nothing else on screen, bring the model back.
+  const model = $('model');
+  if (!e.target.checked && !model.checked) {
+    model.checked = true;
+    model.dispatchEvent(new Event('change'));
+  }
 });
 
 $('model').addEventListener('change', (e) => {
