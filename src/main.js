@@ -288,10 +288,6 @@ bindRange('backdrop', (v) => `L* ${v}`, (v) => {
   $('backdrop').style.setProperty('--thumb', `rgb(${Array(3).fill(Math.round(g * 255)).join(' ')})`);
 });
 
-$('shadows').addEventListener('change', (e) => {
-  key.castShadow = e.target.checked;
-});
-
 $('loomis').addEventListener('change', (e) => {
   loomis.group.visible = e.target.checked;
 });
