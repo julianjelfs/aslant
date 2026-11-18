@@ -209,16 +209,36 @@ function syncBall() {
 ball.setDir(ball.dir);
 
 const deg = (v) => `${v}°`;
+// Reflected light is set as a share of the lamp, the way a lighting ratio
+// is: "1/4 of the lamp" means the shadow side gets a quarter of the light
+// the lit side gets. It follows the lamp's strength, so turning the lamp up
+// keeps the same light-to-shadow relationship.
+//
+// The slider runs on a log scale from none, through 1/32, to 1/2. The fill is
+// a hemisphere light, which reaches a side-facing shadow plane at about 0.59
+// of its intensity (halfway between sky and the dimmer bounce from below).
+const HEMI_SIDE = 0.59;
+let reflected = 1 / 4;
+
+const reflectedAt = (t) => (t <= 0 ? 0 : 1 / (32 / 16 ** (t / 100)));
+
+function applyReflected() {
+  // Lit side = lamp + reflected; shadow side = reflected. Ratio r = shadow / lit.
+  const lamp = key.intensity;
+  fill.intensity = reflected > 0 ? (lamp * reflected) / (1 - reflected) / HEMI_SIDE : 0;
+  syncBall();
+}
+
 bindRange('key', (v) => v.toFixed(1), (v) => {
   key.intensity = v;
-  syncBall();
+  applyReflected();
 });
-bindRange('fill', (v) => `${Math.round(v * 100)}%`, (v) => {
-  fill.intensity = v;
-  syncBall();
+bindRange('fill', (v) => (v <= 0 ? 'None' : `1/${Math.round(1 / reflectedAt(v))} of the lamp`), (v) => {
+  reflected = reflectedAt(v);
+  applyReflected();
 });
 
-// Colour temperature. The key defaults to noon sun and the fill to north sky, roughly the
+// Colour temperature. The key defaults to noon sun and the reflected light to north sky, roughly the
 // way a lamp and a north window light a studio.
 function bindKelvin(id, kelvin, apply) {
   const input = $(id);
