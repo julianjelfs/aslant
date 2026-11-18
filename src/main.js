@@ -84,7 +84,7 @@ function planesFrom(smooth) {
   g.setAttribute('position', smooth.attributes.position.clone());
   g.setIndex(smooth.index.clone());
   const merged = mergeVertices(g);
-  const keep = 700;
+  const keep = 1600;
   const simplified = new SimplifyModifier().modify(merged, Math.max(merged.attributes.position.count - keep, 0));
   simplified.computeVertexNormals();
   return simplified;

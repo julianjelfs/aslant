@@ -23,7 +23,7 @@ GitHub Pages serves `main` from the repo root.
 
 `models/head.glb` is the head and neck cut from the [MakeHuman](https://github.com/makehumancommunity/makehuman) hm08 base mesh, which MakeHuman released under CC0. `tool/extract-head.mjs` makes it. It's a placeholder: a real planes head (an Asaro-style model with a licence that allows redistribution) would replace it, and the Loomis fit in `src/loomis.js` would need re-measuring for that model.
 
-"Planes" mode collapses the mesh to about 700 vertices with three.js's `SimplifyModifier` and shades it flat. It's a rough stand-in for a sculpted planes head.
+"Planes" mode collapses the mesh to about 1,600 vertices with three.js's `SimplifyModifier` and shades it flat. It's a rough stand-in for a sculpted planes head.
 
 ## Licence
 
