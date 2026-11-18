@@ -79,10 +79,11 @@ headGroup.add(head, eyes);
 scene.add(headGroup);
 
 // Plane size slider, 0..100, to meshoptimizer's error on a log scale:
-// 0.0015 keeps the small planes of lids and lips, 0.03 leaves big blocks.
-const errorOf = (size) => 0.0015 * 20 ** (size / 100);
+// 0.0015 keeps the small planes of lids and lips, 0.01 leaves big blocks.
+// Much past 0.01 the nose and brow start to go.
+const errorOf = (size) => 0.0015 * (0.01 / 0.0015) ** (size / 100);
 
-const surface = { kind: 'smooth', size: 40, smooth: null, planes: new Map() };
+const surface = { kind: 'smooth', size: 50, smooth: null, planes: new Map() };
 
 function setSurface() {
   if (!surface.smooth) return;
