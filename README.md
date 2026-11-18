@@ -8,7 +8,7 @@ Live at https://aslant.julianjelfs.co.uk/
 
 - Drag to orbit, right-drag or two fingers to pan, scroll or pinch to zoom. The key light is set relative to you, so orbiting reads as turning the head under a lamp that stays put.
 - Light: direction (around and height), strength, fill, cast shadows on or off.
-- Head: roll, smooth or faceted ("Planes"), backdrop value.
+- Head: roll, smooth or planes (with a plane size slider), backdrop value.
 - Loomis overlay: ball, side planes, brow and hairline, nose and chin lines, jaw. Lines behind the head show faintly.
 - Values: 2 to 7 bands of CIE L*, using the same maths as Askance's shader (`src/values.js`).
 - Save picture: a PNG of the current view, ready to open in Askance.
@@ -21,9 +21,9 @@ GitHub Pages serves `main` from the repo root.
 
 ## The head
 
-`models/head.glb` is the head and neck cut from the [MakeHuman](https://github.com/makehumancommunity/makehuman) hm08 base mesh, which MakeHuman released under CC0. `tool/extract-head.mjs` makes it. It's a placeholder: a real planes head (an Asaro-style model with a licence that allows redistribution) would replace it, and the Loomis fit in `src/loomis.js` would need re-measuring for that model.
+`models/head.glb` is the head and neck cut from the [MakeHuman](https://github.com/makehumancommunity/makehuman) hm08 base mesh, which MakeHuman released under CC0. `tool/extract-head.mjs` makes it: it trims the body below the neck, keeps the eyes as a separate mesh, and snaps the two halves to exact mirror images. The Loomis fit in `src/loomis.js` is measured against this file.
 
-"Planes" mode collapses the mesh to about 1,600 vertices with three.js's `SimplifyModifier` and shades it flat. It's a rough stand-in for a sculpted planes head.
+"Planes" runs the head through [meshoptimizer](https://github.com/zeux/meshoptimizer)'s simplifier (`src/planes.js`), which merges near-flat runs of triangles into single planes and keeps the breaks where the form turns. It simplifies the right half and mirrors it, so the planes are symmetrical. The Plane size slider sets how far the surface may drift, from small planes around the lids and lips to big blocks. The eyes are left out of the simplification.
 
 ## Licence
 

@@ -5,10 +5,9 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
-import { SimplifyModifier } from 'three/addons/modifiers/SimplifyModifier.js';
-import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { ValueShader, greyOfLstar } from './values.js';
 import { buildLoomis } from './loomis.js';
+import { planesOf, ready as planesReady } from './planes.js';
 
 const $ = (id) => document.getElementById(id);
 const stage = $('stage');
@@ -69,34 +68,37 @@ function placeKey() {
 
 const material = new THREE.MeshStandardMaterial({ color: 0xd9d4ca, roughness: 0.88, metalness: 0 });
 const head = new THREE.Mesh(new THREE.BufferGeometry(), material);
-head.castShadow = true;
-head.receiveShadow = true;
-
-const headGroup = new THREE.Group();
-headGroup.add(head);
-scene.add(headGroup);
-
-const surfaces = { smooth: null, planes: null };
-
-function planesFrom(smooth) {
-  // Collapse edges until the scan reads as a planes head, then shade flat.
-  const g = new THREE.BufferGeometry();
-  g.setAttribute('position', smooth.attributes.position.clone());
-  g.setIndex(smooth.index.clone());
-  const merged = mergeVertices(g);
-  const keep = 1600;
-  const simplified = new SimplifyModifier().modify(merged, Math.max(merged.attributes.position.count - keep, 0));
-  simplified.computeVertexNormals();
-  return simplified;
+const eyes = new THREE.Mesh(new THREE.BufferGeometry(), material);
+for (const m of [head, eyes]) {
+  m.castShadow = true;
+  m.receiveShadow = true;
 }
 
-function setSurface(kind) {
-  if (!surfaces.smooth) return;
-  if (kind === 'planes' && !surfaces.planes) surfaces.planes = planesFrom(surfaces.smooth);
-  head.geometry = surfaces[kind];
-  material.flatShading = kind === 'planes';
+const headGroup = new THREE.Group();
+headGroup.add(head, eyes);
+scene.add(headGroup);
+
+// Plane size slider, 0..100, to meshoptimizer's error on a log scale:
+// 0.0015 keeps the small planes of lids and lips, 0.03 leaves big blocks.
+const errorOf = (size) => 0.0015 * 20 ** (size / 100);
+
+const surface = { kind: 'smooth', size: 40, smooth: null, planes: new Map() };
+
+function setSurface() {
+  if (!surface.smooth) return;
+  let geometry = surface.smooth;
+  if (surface.kind === 'planes') {
+    geometry = surface.planes.get(surface.size);
+    if (!geometry) {
+      geometry = planesOf(surface.smooth, errorOf(surface.size));
+      surface.planes.set(surface.size, geometry);
+    }
+  }
+  head.geometry = geometry;
+  overlayHead.geometry = geometry;
+  material.flatShading = surface.kind === 'planes';
   material.needsUpdate = true;
-  overlayHead.geometry = head.geometry;
+  $('plane-size').hidden = surface.kind !== 'planes';
 }
 
 // --- Overlay: Loomis lines, drawn after the value pass -----------------------
@@ -114,9 +116,10 @@ const overlayHead = new THREE.Mesh(
   new THREE.MeshBasicMaterial({ colorWrite: false, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 }),
 );
 overlayHead.renderOrder = 0;
+const overlayEyes = new THREE.Mesh(eyes.geometry, overlayHead.material);
 const loomis = buildLoomis();
 loomis.group.visible = false;
-overlayRoot.add(overlayHead, loomis.group);
+overlayRoot.add(overlayHead, overlayEyes, loomis.group);
 const eye = new THREE.Vector3();
 
 // --- Post-processing ---------------------------------------------------------
@@ -197,14 +200,15 @@ $('loomis').addEventListener('change', (e) => {
 
 for (const input of document.querySelectorAll('input[name="surface"]')) {
   input.addEventListener('change', () => {
-    if (input.value === 'planes' && !surfaces.planes) status('Cutting planes…');
-    // Let the status paint before the simplifier blocks the thread.
-    requestAnimationFrame(() => setTimeout(() => {
-      setSurface(input.value);
-      status('');
-    }));
+    surface.kind = input.value;
+    setSurface();
   });
 }
+
+bindRange('plane-size-input', (v) => (v < 34 ? 'small' : v < 67 ? 'medium' : 'large'), (v) => {
+  surface.size = v;
+  setSurface();
+});
 
 for (const input of document.querySelectorAll('input[name="steps"]')) {
   input.addEventListener('change', () => {
@@ -241,14 +245,19 @@ $('export').addEventListener('click', () => {
 
 new GLTFLoader().load(
   'models/head.glb',
-  (gltf) => {
-    let mesh = null;
+  async (gltf) => {
+    const meshes = {};
     gltf.scene.traverse((o) => {
-      if (o.isMesh && !mesh) mesh = o;
+      if (o.isMesh) meshes[o.name] = o.geometry;
     });
-    surfaces.smooth = mesh.geometry;
-    const checked = document.querySelector('input[name="surface"]:checked').value;
-    setSurface(checked);
+    if (meshes.eyes) {
+      eyes.geometry = meshes.eyes;
+      overlayEyes.geometry = meshes.eyes;
+    }
+    await planesReady;
+    surface.smooth = meshes.head;
+    surface.kind = document.querySelector('input[name="surface"]:checked').value;
+    setSurface();
     status('');
   },
   undefined,

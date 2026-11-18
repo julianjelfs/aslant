@@ -181,3 +181,5 @@ button.primary:hover { background: var(--accent-pressed); }
   }
   #status { bottom: auto; top: 16px; }
 }
+
+[hidden] { display: none !important; }

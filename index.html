@@ -11,7 +11,8 @@
     {
       "imports": {
         "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
-        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/",
+        "meshoptimizer/": "https://cdn.jsdelivr.net/npm/meshoptimizer@0.22.0/"
       }
     }
   </script>
@@ -47,6 +48,8 @@
           <label><input type="radio" name="surface" value="smooth" checked> Smooth</label>
           <label><input type="radio" name="surface" value="planes"> Planes</label>
         </div>
+        <label id="plane-size" hidden>Plane size <output for="plane-size-input"></output>
+          <input id="plane-size-input" type="range" min="0" max="100" step="1" value="40"></label>
         <label class="check"><input id="loomis" type="checkbox"> Loomis</label>
         <label>Backdrop <output for="backdrop"></output>
           <input id="backdrop" type="range" min="0" max="100" step="1" value="45"></label>
