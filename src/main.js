@@ -278,6 +278,94 @@ bindKelvin('fill-k', 8500, (c) => {
 
 bindRange('roll', deg, (v) => (headGroup.rotation.z = THREE.MathUtils.degToRad(v)));
 
+// Roll by gesture as well as by slider. Both go through the slider, so it
+// always shows the head's roll. Positive roll tips the crown to the left.
+function nudgeRoll(by) {
+  const input = $('roll');
+  const v = THREE.MathUtils.clamp(Number(input.value) + by, Number(input.min), Number(input.max));
+  if (Math.round(v) === Number(input.value)) return;
+  input.value = Math.round(v);
+  input.dispatchEvent(new Event('input'));
+}
+
+// Trackpad: a horizontal two-finger swipe rolls, a vertical one zooms. Each
+// gesture locks to the axis it starts on, so a slightly diagonal swipe does
+// one thing. This listener runs in the capture phase on the stage, ahead of
+// OrbitControls on the canvas, and keeps rolls away from it. It also stops
+// Chrome reading a horizontal swipe as Back.
+{
+  const ROLL_PER_PX = 0.15;
+  let axis = null;
+  let last = 0;
+  let pending = 0;
+  $('stage').addEventListener(
+    'wheel',
+    (e) => {
+      if (e.ctrlKey) return; // pinch-zoom on a trackpad arrives as ctrl+wheel
+      const now = performance.now();
+      if (now - last > 200) axis = null;
+      last = now;
+      if (!axis) {
+        if (Math.abs(e.deltaX) < 1 && Math.abs(e.deltaY) < 1) return;
+        axis = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? 'x' : 'y';
+        pending = 0;
+      }
+      if (axis !== 'x') return;
+      e.preventDefault();
+      e.stopPropagation();
+      pending += e.deltaX * ROLL_PER_PX;
+      const whole = Math.trunc(pending);
+      if (whole) {
+        nudgeRoll(whole);
+        pending -= whole;
+      }
+    },
+    { capture: true, passive: false },
+  );
+}
+
+// Touch: twisting two fingers rolls the head, alongside OrbitControls' own
+// two-finger pinch and move. The head turns with the fingers.
+{
+  const touches = new Map();
+  let lastAngle = null;
+  let pending = 0; // a slow twist moves less than a degree per event
+  const angle = () => {
+    const [a, b] = [...touches.values()];
+    return (Math.atan2(b.y - a.y, b.x - a.x) * 180) / Math.PI;
+  };
+  const stage = $('stage');
+  stage.addEventListener('pointerdown', (e) => {
+    if (e.pointerType !== 'touch') return;
+    touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    lastAngle = touches.size === 2 ? angle() : null;
+  });
+  stage.addEventListener('pointermove', (e) => {
+    if (!touches.has(e.pointerId)) return;
+    touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (touches.size !== 2 || lastAngle === null) return;
+    const a = angle();
+    let d = a - lastAngle;
+    if (d > 180) d -= 360;
+    if (d < -180) d += 360;
+    lastAngle = a;
+    // Screen y points down, so a clockwise twist is positive here and tips the
+    // crown right, which is negative roll.
+    pending -= d;
+    const whole = Math.trunc(pending);
+    if (whole) {
+      nudgeRoll(whole);
+      pending -= whole;
+    }
+  });
+  const lift = (e) => {
+    touches.delete(e.pointerId);
+    lastAngle = touches.size === 2 ? angle() : null;
+  };
+  stage.addEventListener('pointerup', lift);
+  stage.addEventListener('pointercancel', lift);
+}
+
 {
   const stops = [];
   for (let i = 0; i <= 10; i++) {
