@@ -11,8 +11,7 @@
     {
       "imports": {
         "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
-        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/",
-        "meshoptimizer/": "https://cdn.jsdelivr.net/npm/meshoptimizer@0.22.0/"
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
       }
     }
   </script>
@@ -44,12 +43,6 @@
         <h2>Head</h2>
         <label>Roll <output for="roll"></output>
           <input id="roll" type="range" min="-45" max="45" step="1" value="0"></label>
-        <div class="segmented" role="radiogroup" aria-label="Surface">
-          <label><input type="radio" name="surface" value="smooth" checked> Smooth</label>
-          <label><input type="radio" name="surface" value="planes"> Planes</label>
-        </div>
-        <label id="plane-size" hidden>Plane size <output for="plane-size-input"></output>
-          <input id="plane-size-input" type="range" min="0" max="100" step="1" value="50"></label>
         <label class="check"><input id="loomis" type="checkbox"> Loomis</label>
         <label>Backdrop <output for="backdrop"></output>
           <input id="backdrop" type="range" min="0" max="100" step="1" value="45"></label>
@@ -70,7 +63,7 @@
 
       <button id="export" type="button" class="primary">Save picture</button>
       <p class="hint">Drag to turn. Right-drag or two fingers to move. Scroll or pinch to zoom.</p>
-      <p class="credit">Head: <a href="https://github.com/makehumancommunity/makehuman">MakeHuman</a> base mesh, CC0.</p>
+      <p class="credit">Head: <a href="https://sketchfab.com/3d-models/head-planes-reference-7b6167ae3e484f1884ae0491a491e856">Head Planes Reference</a> by <a href="https://sketchfab.com/zsoltsulyok">zsoltsulyok</a>, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>. Reduced and rescaled.</p>
     </div>
   </aside>
 

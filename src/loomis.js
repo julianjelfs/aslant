@@ -10,14 +10,14 @@ import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
 import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js';
 
-// Fitted by eye to the MakeHuman head in models/head.glb (centred on its
-// bounding box). A different model needs its own numbers.
-export const MAKEHUMAN_FIT = {
-  cy: 0.45, // ball centre height = brow line
-  cz: -0.04, // ball centre depth, so the ball's front touches the brow
-  r: 0.98, // ball radius; the side cuts land near the widest part of the skull
-  u: 0.65, // hairline-brow = brow-nose = nose-chin
-  chinZ: 0.81, // depth of the chin's front
+// Measured on models/head.glb ("Head Planes Reference", in the units
+// tool/prepare-head.mjs writes). A different model needs its own numbers.
+export const HEAD_FIT = {
+  cy: 0.35, // ball centre height = brow line
+  cz: 0, // ball centre depth, so the ball's front touches the brow
+  r: 0.98, // ball radius, crown to brow
+  u: 0.695, // hairline-brow = brow-nose = nose-chin
+  chinZ: 0.87, // depth of the chin's front
 };
 
 function circle(out, centre, a, b, radius, n = 64, from = 0, to = Math.PI * 2) {
@@ -107,7 +107,7 @@ function lines(points, materials) {
  * the ball's outline facing it. `setSize(w, h)` takes the canvas size in CSS
  * pixels.
  */
-export function buildLoomis(fit = MAKEHUMAN_FIT, color = 0xe2471f) {
+export function buildLoomis(fit = HEAD_FIT, color = 0xe2471f) {
   const visible = new LineMaterial({ color, linewidth: 2, depthWrite: false });
   const hidden = new LineMaterial({ color, linewidth: 1.25, transparent: true, opacity: 0.35, depthTest: false, depthWrite: false });
   const materials = [hidden, visible];

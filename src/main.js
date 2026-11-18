@@ -7,7 +7,6 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { ValueShader, greyOfLstar } from './values.js';
 import { buildLoomis } from './loomis.js';
-import { planesOf, ready as planesReady } from './planes.js';
 
 const $ = (id) => document.getElementById(id);
 const stage = $('stage');
@@ -43,7 +42,7 @@ controls.maxDistance = 25;
 const key = new THREE.DirectionalLight(0xffffff, 2.4);
 key.castShadow = true;
 key.shadow.mapSize.set(2048, 2048);
-Object.assign(key.shadow.camera, { left: -2.2, right: 2.2, top: 2.2, bottom: -2.2, near: 0.5, far: 25 });
+Object.assign(key.shadow.camera, { left: -2.6, right: 2.6, top: 2.6, bottom: -2.6, near: 0.5, far: 25 });
 key.shadow.bias = -0.0004;
 key.shadow.normalBias = 0.015;
 scene.add(key, key.target);
@@ -68,39 +67,12 @@ function placeKey() {
 
 const material = new THREE.MeshStandardMaterial({ color: 0xd9d4ca, roughness: 0.88, metalness: 0 });
 const head = new THREE.Mesh(new THREE.BufferGeometry(), material);
-const eyes = new THREE.Mesh(new THREE.BufferGeometry(), material);
-for (const m of [head, eyes]) {
-  m.castShadow = true;
-  m.receiveShadow = true;
-}
+head.castShadow = true;
+head.receiveShadow = true;
 
 const headGroup = new THREE.Group();
-headGroup.add(head, eyes);
+headGroup.add(head);
 scene.add(headGroup);
-
-// Plane size slider, 0..100, to meshoptimizer's error on a log scale:
-// 0.0015 keeps the small planes of lids and lips, 0.01 leaves big blocks.
-// Much past 0.01 the nose and brow start to go.
-const errorOf = (size) => 0.0015 * (0.01 / 0.0015) ** (size / 100);
-
-const surface = { kind: 'smooth', size: 50, smooth: null, planes: new Map() };
-
-function setSurface() {
-  if (!surface.smooth) return;
-  let geometry = surface.smooth;
-  if (surface.kind === 'planes') {
-    geometry = surface.planes.get(surface.size);
-    if (!geometry) {
-      geometry = planesOf(surface.smooth, errorOf(surface.size));
-      surface.planes.set(surface.size, geometry);
-    }
-  }
-  head.geometry = geometry;
-  overlayHead.geometry = geometry;
-  material.flatShading = surface.kind === 'planes';
-  material.needsUpdate = true;
-  $('plane-size').hidden = surface.kind !== 'planes';
-}
 
 // --- Overlay: Loomis lines, drawn after the value pass -----------------------
 //
@@ -117,10 +89,9 @@ const overlayHead = new THREE.Mesh(
   new THREE.MeshBasicMaterial({ colorWrite: false, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 }),
 );
 overlayHead.renderOrder = 0;
-const overlayEyes = new THREE.Mesh(eyes.geometry, overlayHead.material);
 const loomis = buildLoomis();
 loomis.group.visible = false;
-overlayRoot.add(overlayHead, overlayEyes, loomis.group);
+overlayRoot.add(overlayHead, loomis.group);
 const eye = new THREE.Vector3();
 
 // --- Post-processing ---------------------------------------------------------
@@ -199,18 +170,6 @@ $('loomis').addEventListener('change', (e) => {
   loomis.group.visible = e.target.checked;
 });
 
-for (const input of document.querySelectorAll('input[name="surface"]')) {
-  input.addEventListener('change', () => {
-    surface.kind = input.value;
-    setSurface();
-  });
-}
-
-bindRange('plane-size-input', (v) => (v < 34 ? 'small' : v < 67 ? 'medium' : 'large'), (v) => {
-  surface.size = v;
-  setSurface();
-});
-
 for (const input of document.querySelectorAll('input[name="steps"]')) {
   input.addEventListener('change', () => {
     const steps = Number(input.value);
@@ -246,19 +205,13 @@ $('export').addEventListener('click', () => {
 
 new GLTFLoader().load(
   'models/head.glb',
-  async (gltf) => {
-    const meshes = {};
+  (gltf) => {
     gltf.scene.traverse((o) => {
-      if (o.isMesh) meshes[o.name] = o.geometry;
+      if (o.isMesh && o.name === 'head') {
+        head.geometry = o.geometry;
+        overlayHead.geometry = o.geometry;
+      }
     });
-    if (meshes.eyes) {
-      eyes.geometry = meshes.eyes;
-      overlayEyes.geometry = meshes.eyes;
-    }
-    await planesReady;
-    surface.smooth = meshes.head;
-    surface.kind = document.querySelector('input[name="surface"]:checked').value;
-    setSurface();
     status('');
   },
   undefined,

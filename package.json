@@ -1,0 +1,13 @@
+{
+  "name": "aslant",
+  "private": true,
+  "type": "module",
+  "description": "Build tools only. The site itself is static files with no build step.",
+  "scripts": {
+    "prepare-head": "node tool/prepare-head.mjs"
+  },
+  "devDependencies": {
+    "meshoptimizer": "0.22.0",
+    "three": "0.170.0"
+  }
+}

@@ -8,7 +8,7 @@ Live at https://aslant.julianjelfs.co.uk/
 
 - Drag to orbit, right-drag or two fingers to pan, scroll or pinch to zoom. The key light is set relative to you, so orbiting reads as turning the head under a lamp that stays put.
 - Light: direction (around and height), strength, fill, cast shadows on or off.
-- Head: roll, smooth or planes (with a plane size slider), backdrop value.
+- Head: roll and backdrop value.
 - Loomis overlay: ball, side planes, brow and hairline, nose and chin lines, jaw. Lines behind the head show faintly.
 - Values: 2 to 7 bands of CIE L*, using the same maths as Askance's shader (`src/values.js`).
 - Save picture: a PNG of the current view, ready to open in Askance.
@@ -21,10 +21,15 @@ GitHub Pages serves `main` from the repo root.
 
 ## The head
 
-`models/head.glb` is the head and neck cut from the [MakeHuman](https://github.com/makehumancommunity/makehuman) hm08 base mesh, which MakeHuman released under CC0. `tool/extract-head.mjs` makes it: it trims the body below the neck, keeps the eyes as a separate mesh, and snaps the two halves to exact mirror images. The Loomis fit in `src/loomis.js` is measured against this file.
+`models/head.glb` is [Head Planes Reference](https://sketchfab.com/3d-models/head-planes-reference-7b6167ae3e484f1884ae0491a491e856) by [zsoltsulyok](https://sketchfab.com/zsoltsulyok), licensed [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). `tool/prepare-head.mjs` turns the Sketchfab download into the shipped file. It welds the four chunks, reduces the mesh from 378k to 60k triangles with [meshoptimizer](https://github.com/zeux/meshoptimizer) (the surface moves by about 0.01% of the head's height), and rescales and recentres it. The download is 10 MB and the shipped file is about 1 MB.
 
-"Planes" runs the head through [meshoptimizer](https://github.com/zeux/meshoptimizer)'s simplifier (`src/planes.js`), which merges near-flat runs of triangles into single planes and keeps the breaks where the form turns. It simplifies the right half and mirrors it, so the planes are symmetrical. The Plane size slider sets how far the surface may drift, from small planes around the lids and lips to big blocks. The eyes are left out of the simplification.
+```
+npm install
+node tool/prepare-head.mjs ~/Downloads/head_planes_reference.glb models/head.glb
+```
+
+The Loomis fit (`HEAD_FIT` in `src/loomis.js`) is measured in the units that script writes.
 
 ## Licence
 
-Code: MIT. Head model: CC0 (MakeHuman).
+Code: MIT. Head model: CC BY 4.0, "Head Planes Reference" by zsoltsulyok, reduced and rescaled.
