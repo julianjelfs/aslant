@@ -6,9 +6,10 @@ Live at https://aslant.julianjelfs.co.uk/
 
 ## What it does
 
-- Drag to orbit, right-drag or two fingers to pan, scroll or pinch to zoom. The key light is set relative to you, so orbiting reads as turning the head under a lamp that stays put.
-- Light: direction (around and height), strength, fill, cast shadows on or off.
-- Head: roll and backdrop value.
+- Drag to orbit, right-drag or two fingers to pan, scroll or pinch to zoom. The light is set relative to you, so orbiting reads as turning the head under a lamp that stays put.
+- Light: drag the lamp round a lit sphere (`src/lightball.js`) that is shaded by the scene's own lights and bands into values with the head. Past the sphere's edge the lamp swings behind for a rim light. Arrow keys move it too.
+- Light colour: colour temperature for the key and the fill, on a mired scale so equal steps look equally warmer or cooler, with named sources (candle, tungsten, north sky) along it. The key starts at noon sun and the fill at north sky.
+- Head: roll, backdrop value, cast shadows on or off.
 - Loomis overlay: ball, side planes, brow and hairline, nose and chin lines, jaw. Lines behind the head show faintly.
 - Values: 2 to 7 bands of CIE L*, using the same maths as Askance's shader (`src/values.js`).
 - Save picture: a PNG of the current view, ready to open in Askance.
@@ -32,4 +33,4 @@ The Loomis fit (`HEAD_FIT` in `src/loomis.js`) is measured in the units that scr
 
 ## Licence
 
-Code: MIT. Head model: CC BY 4.0, "Head Planes Reference" by zsoltsulyok, reduced and rescaled.
+Code: MIT. Typeface: Bricolage Grotesque, SIL Open Font License (`fonts/OFL-BricolageGrotesque.txt`). Head model: CC BY 4.0, "Head Planes Reference" by zsoltsulyok, reduced and rescaled.
