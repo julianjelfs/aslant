@@ -29,10 +29,14 @@ const scene = new THREE.Scene();
 
 // A long lens, like standing a few feet back from a cast.
 const camera = new THREE.PerspectiveCamera(28, 1, 0.1, 100);
-const HOME = new THREE.Vector3(0, 0.15, 8.5);
+// Aim at the middle of the whole bust (models/head.glb runs from y -2.02 at
+// the base to 1.32 at the crown), from far enough back to leave a margin.
+const AIM = new THREE.Vector3(0, -0.35, 0);
+const HOME = new THREE.Vector3(0, -0.2, 9.2);
 camera.position.copy(HOME);
 
 const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.copy(AIM);
 controls.enableDamping = true;
 controls.minDistance = 2.5;
 controls.maxDistance = 25;
@@ -320,7 +324,7 @@ for (const input of document.querySelectorAll('input[name="steps"]')) {
 }
 
 $('reset').addEventListener('click', () => {
-  controls.target.set(0, 0, 0);
+  controls.target.copy(AIM);
   camera.position.copy(HOME);
   controls.update();
 });
