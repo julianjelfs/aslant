@@ -13,7 +13,8 @@ Live at https://aslant.julianjelfs.co.uk/
 - Head: roll (slider, a sideways two-finger swipe on a trackpad, or a two-finger twist on a touch screen) and backdrop value.
 - Loomis overlay: ball, side planes, brow and hairline, nose and chin lines, jaw. Lines behind the head show faintly. Switch the model off to see the frame on its own; the lines then hide behind the Loomis ball instead.
 - Values: 2 to 7 bands of CIE L*, using the same maths as Askance's shader (`src/values.js`). The bands are absolute, so the lamp is exposed for the light: at 100% strength a plane facing it squarely lands at L* 95, whatever the lamp's colour.
-- Save picture: a PNG of the current view, ready to open in Askance.
+- Open in Askance: opens Askance in a new tab and hands it a clean picture of the head (no Loomis lines or value bands, cropped to portrait) with your values setting, which Askance opens as a new study. It needs Askance's matching receiver (`lib/ui/aslant/` in Askance). Where the two tabs can't talk, as an installed app on a phone may not, Aslant says so and Save is the way across.
+- Save: a PNG of exactly what's on screen.
 - Every setting, the view included, is kept in this browser's localStorage, so a refresh changes nothing. "Reset everything" goes back to the defaults.
 
 ## Running it

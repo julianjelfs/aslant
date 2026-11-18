@@ -419,22 +419,31 @@ button.quiet {
 
 button.quiet:hover { background: var(--raised); color: var(--gesso); }
 
-button.primary {
+/* Open in Askance leads; Save sits beside it. */
+.actions {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+button.primary,
+button.secondary {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  width: 100%;
-  margin-top: 4px;
-  padding: 11px 12px;
+  padding: 11px 14px;
   border-radius: 10px;
-  background: var(--accent);
-  color: #fff;
   font-weight: 600;
-  transition: background 160ms var(--ease);
+  transition: background 160ms var(--ease), color 160ms var(--ease);
 }
 
+button.primary { background: var(--accent); color: #fff; }
 button.primary:hover { background: var(--accent-pressed); }
+button.secondary { background: var(--raised); color: var(--gesso); }
+button.secondary:hover { background: var(--rule); }
+button:disabled { opacity: 0.6; cursor: progress; }
 
 .hint, .credit {
   margin: 12px 0 0;

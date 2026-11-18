@@ -539,6 +539,95 @@ $('reset-all').addEventListener('click', () => {
   location.reload();
 });
 
+// --- Open in Askance ----------------------------------------------------------
+//
+// Askance is a separate app at its own address, so the picture goes across
+// by message: Aslant opens Askance in a new tab, Askance says it's listening
+// (to Aslant's origin only), and Aslant posts the picture and the values
+// setting back (to Askance's origin only). Askance opens it as a new study.
+//
+// The new tab has to be opened inside the click, or browsers block it. Where
+// the two tabs can't talk, as when an installed app on a phone opens the
+// link in a separate browser, nothing answers, and Aslant says so.
+
+const ASKANCE = 'https://askance.julianjelfs.co.uk';
+
+// The picture Askance gets is the head alone: no Loomis lines, no value
+// bands (banding is Askance's job), centred, cropped to portrait.
+function cleanPicture() {
+  const showLoomis = loomis.group.visible;
+  const showValues = values.enabled;
+  loomis.group.visible = false;
+  values.enabled = false;
+  camera.clearViewOffset();
+  camera.zoom = 1;
+  camera.updateProjectionMatrix();
+  render();
+
+  const src = renderer.domElement;
+  const h = src.height;
+  const w = Math.min(src.width, Math.round(h * 0.8));
+  const crop = document.createElement('canvas');
+  crop.width = w;
+  crop.height = h;
+  crop.getContext('2d').drawImage(src, (src.width - w) / 2, 0, w, h, 0, 0, w, h);
+
+  // Put the view back before the browser draws, so nothing flickers.
+  loomis.group.visible = showLoomis;
+  values.enabled = showValues;
+  frame();
+  render();
+
+  return new Promise((resolve) => crop.toBlob(resolve, 'image/png'));
+}
+
+function flash(text) {
+  status(text);
+  setTimeout(() => {
+    if ($('status').textContent === text) status('');
+  }, 6000);
+}
+
+$('to-askance').addEventListener('click', async () => {
+  const button = $('to-askance');
+  const tab = window.open(`${ASKANCE}/#from=aslant`, '_blank');
+  if (!tab) {
+    flash('Your browser blocked the new tab. Allow pop-ups for Aslant, or use Save.');
+    return;
+  }
+  button.disabled = true;
+  status('Opening Askance…');
+
+  const ready = new Promise((resolve) => {
+    const onMessage = (e) => {
+      if (e.origin !== ASKANCE || e.source !== tab || e.data?.type !== 'askance:ready') return;
+      window.removeEventListener('message', onMessage);
+      resolve(true);
+    };
+    window.addEventListener('message', onMessage);
+    setTimeout(() => {
+      window.removeEventListener('message', onMessage);
+      resolve(false);
+    }, 25000);
+  });
+
+  const blob = await cleanPicture();
+  const image = new Uint8Array(await blob.arrayBuffer());
+  const steps = Number(document.querySelector('input[name="steps"]:checked').value);
+
+  if (await ready) {
+    tab.postMessage(
+      { type: 'aslant:study', image, settings: steps > 0 ? { steps } : {} },
+      ASKANCE,
+      [image.buffer],
+    );
+    status('');
+  } else {
+    flash("Askance didn't answer, so nothing was sent. Use Save, then open the file in Askance.");
+  }
+  button.disabled = false;
+});
+
 $('export').addEventListener('click', () => {
   render();
   renderer.domElement.toBlob((blob) => {
